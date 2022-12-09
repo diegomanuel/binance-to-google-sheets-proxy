@@ -48,16 +48,32 @@ defmodule HttpProxy.Handle do
   """
   @spec start_link([binary]) :: pid
   def start_link([proxy, module_name]) do
+    schema = if Application.get_env(:http_proxy, :https, false), do: "https", else: "http"
+
     Logger.info(fn ->
-      "Running #{__MODULE__} on http://localhost:#{proxy.port} named #{module_name}, timeout: #{req_timeout()}"
+      "Running #{__MODULE__} on #{schema}://localhost:#{proxy.port} named #{module_name}, timeout: #{req_timeout()}"
     end)
 
-    PlugCowboy.http(__MODULE__, [], cowboy_options(proxy.port, module_name))
+    opts = [__MODULE__, [], cowboy_options(proxy.port, module_name, schema)]
+    apply(PlugCowboy, String.to_atom(schema), opts)
   end
 
-  # see https://github.com/elixir-lang/plug/blob/master/lib/plug/adapters/cowboy.ex#L5
-  defp cowboy_options(port, module_name),
-    do: [port: port, ref: String.to_atom(module_name)]
+  # see https://hexdocs.pm/plug_cowboy/Plug.Cowboy.html
+  defp cowboy_options(port, module_name, "http"),
+    do: [
+      port: port,
+      ref: String.to_atom(module_name)
+    ]
+
+  defp cowboy_options(port, module_name, "https"),
+    do:
+      cowboy_options(port, module_name, "http") ++
+        [
+          otp_app: :http_proxy,
+          cipher_suite: :strong,
+          keyfile: "priv/keys/localhost.key",
+          certfile: "priv/keys/localhost.cert"
+        ]
 
   defp req_timeout, do: Application.get_env(:http_proxy, :timeout, 5000)
 

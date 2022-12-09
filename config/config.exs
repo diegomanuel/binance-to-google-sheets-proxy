@@ -1,6 +1,7 @@
 import Config
 
 config :http_proxy,
+  https: false,
   proxies: [
     %{port: 4000, to: "https://api.binance.com/"},
     %{port: 4001, to: "https://api1.binance.com/"},
@@ -9,4 +10,4 @@ config :http_proxy,
     %{port: 4004, to: "https://fapi.binance.com/"},
     %{port: 4005, to: "https://dapi.binance.com/"}
   ],
-  timeout: 10_000
+  timeout: 30_000

@@ -8,6 +8,7 @@ defmodule BtgsProxy.MixProject do
       version: "0.1.0",
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
+      compilers: Mix.compilers(),
       deps: deps()
     ]
   end
@@ -28,7 +29,7 @@ defmodule BtgsProxy.MixProject do
       # {:http_proxy, "~> 1.6"}
       {:plug_cowboy, "~> 2.6"},
       {:hackney, "~> 1.18"},
-      {:exjsx, "~> 4.0.0", runtime: false},
+      {:exjsx, "~> 4.0.0"},
       {:earmark, "~> 1.0", only: :dev, runtime: false},
       {:ex_doc, "~> 0.29", only: :dev, runtime: false},
       {:ex_parameterized, "~> 1.0", only: :test, runtime: false},
