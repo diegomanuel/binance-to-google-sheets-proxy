@@ -25,6 +25,7 @@ defmodule HttpProxy.Handle do
   @default_schemes [:http, :https]
 
   @allowed_headers [
+    "x-mbx-apikey",
     "accept",
     "accept-encoding",
     "accept-language",
@@ -71,8 +72,8 @@ defmodule HttpProxy.Handle do
         [
           otp_app: :http_proxy,
           cipher_suite: :strong,
-          keyfile: "priv/keys/localhost.key",
-          certfile: "priv/keys/localhost.cert"
+          keyfile: Application.get_env(:http_proxy, :https)[:keyfile],
+          certfile: Application.get_env(:http_proxy, :https)[:certfile]
         ]
 
   defp req_timeout, do: Application.get_env(:http_proxy, :timeout, 5000)
@@ -138,13 +139,9 @@ defmodule HttpProxy.Handle do
   def schemes, do: @default_schemes
 
   defp set_headers(headers) do
-    headers
-    |> Enum.reduce([], fn {header, value}, acc ->
-      if header in @allowed_headers,
-        do: [{header, value} | acc],
-        else: acc
+    Enum.filter(headers, fn {header, _value} ->
+      header in @allowed_headers
     end)
-    |> Enum.reverse()
   end
 
   defp write_proxy({conn, _req_body}, client) do
@@ -174,6 +171,8 @@ defmodule HttpProxy.Handle do
   defp read_proxy({conn, req_body}, client) do
     case :hackney.start_response(client) do
       {:ok, status, headers, client} ->
+        # Downcase all headers since it makes Cowboy break under HTTPS
+        headers = Enum.map(headers, fn {header, value} -> {String.downcase(header), value} end)
         Logger.debug(fn -> "request path: #{gen_path(conn, target_proxy(conn))}" end)
 
         Logger.debug(fn ->

@@ -1,22 +1,27 @@
-.PHONY: setup start release deploy
+.PHONY: setup start stop release daemon logs
 
 export MIX_ENV ?= dev
 
 setup:
+	@mkdir -p priv/ssl
+	CPP=cpp EGREP=egrep KERL_CONFIGURE_OPTIONS="--without-javac --without-wx" asdf install
 	mix deps.get && mix compile
 
 start:
-	mix clean
 	iex --name btgs_proxy@127.0.0.1 -S mix run --no-halt
+
+stop:
+	_build/prod/rel/http_proxy/bin/http_proxy stop
 
 release: MIX_ENV=prod
 release:
-	mix deps.get && mix compile && mix clean && mix release --overwrite
+	mix deps.get && mix compile && mix release --overwrite
 	tar -zcf btgs_proxy.tar.gz -C _build/prod/rel http_proxy
-	_build/prod/rel/http_proxy/bin/http_proxy start
+	${MAKE} daemon
 
-deploy:
-	mkdir -p deploy
-	cd deploy && wget -c https://github.com/diegomanuel/binance-to-google-sheets-proxy/releases/download/v0.1.0/btgs_proxy.tar.gz
-	cd deploy && tar -xzf btgs_proxy.tar.gz && rm btgs_proxy.tar.gz
-	deploy/http_proxy/bin/http_proxy start
+daemon:
+	_build/prod/rel/http_proxy/bin/http_proxy daemon
+	${MAKE} logs
+
+logs:
+	tail -f _build/prod/rel/http_proxy/tmp/log/*

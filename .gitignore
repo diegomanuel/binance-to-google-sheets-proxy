@@ -29,8 +29,5 @@ btgs_proxy.tar.gz
 # Lint
 /.elixir_ls/
 
-# Deployment
-/deploy/
-
 # Private dir
 /priv/
