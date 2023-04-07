@@ -89,7 +89,7 @@ defmodule HttpProxy.Handle do
       |> String.to_atom()
       |> :hackney.request(
         uri(conn),
-        set_headers(conn.req_headers),
+        set_request_headers(conn.req_headers),
         :stream,
         connect_timeout: req_timeout(),
         recv_timeout: req_timeout(),
@@ -138,9 +138,25 @@ defmodule HttpProxy.Handle do
   @spec schemes() :: []
   def schemes, do: @default_schemes
 
-  defp set_headers(headers) do
+  defp set_request_headers(headers) do
     Enum.filter(headers, fn {header, _value} ->
       header in @allowed_headers
+    end)
+  end
+
+  defp set_response_headers(headers, body) do
+    Enum.map(headers, fn {header, value} ->
+      header
+      # Downcase all headers since it makes Cowboy break under HTTPS
+      |> String.downcase()
+      |> case do
+        # Replace "transfer-encoding" (chunked) with "content-length"
+        "transfer-encoding" ->
+          {"content-length", "#{byte_size(body)}"}
+
+        header ->
+          {header, value}
+      end
     end)
   end
 
@@ -171,16 +187,16 @@ defmodule HttpProxy.Handle do
   defp read_proxy({conn, req_body}, client) do
     case :hackney.start_response(client) do
       {:ok, status, headers, client} ->
-        # Downcase all headers since it makes Cowboy break under HTTPS
-        headers = Enum.map(headers, fn {header, value} -> {String.downcase(header), value} end)
         Logger.debug(fn -> "request path: #{gen_path(conn, target_proxy(conn))}" end)
 
+        {:ok, res_body} = :hackney.body(client)
+        resp_headers = set_response_headers(headers, res_body)
+
         Logger.debug(fn ->
-          "#{__MODULE__}.read_proxy, :ok, headers: #{headers |> JSX.encode!()}, status: #{status}"
+          "#{__MODULE__}.read_proxy, :ok, headers: #{resp_headers |> JSX.encode!()}, status: #{status}"
         end)
 
-        {:ok, res_body} = :hackney.body(client)
-        read_request(%{conn | resp_headers: headers}, req_body, res_body, status)
+        read_request(%{conn | resp_headers: resp_headers}, req_body, res_body, status)
 
       {:error, message} ->
         Logger.debug(fn -> "request path: #{gen_path(conn, target_proxy(conn))}" end)

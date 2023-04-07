@@ -12,7 +12,7 @@ Binance decided to block API requests coming from restricted countries like USA,
 That broke several platforms, including the spreadsheet add-on: https://github.com/diegomanuel/binance-to-google-sheets/issues/142
 
 
-The idea is to have a proxy server, located anywhere we want, that acts as a __tunnel__ for the spreadsheet's requests.  
+The idea is to have a proxy server, located anywhere we want, that acts as a _tunnel_ for the spreadsheet's requests.  
 The proxy solution could be also done with `nginx`, but I went with Elixir because I love it and because I can/want.
 
 ## How it works?
@@ -122,7 +122,7 @@ You can run `make stop` to gracefully stop the background proxy server.
 You can run `make logs` to see the logs anytime.  
 
 **NOTE:** When running `make release` it will also generate `btgs_proxy.tar.gz`.  
-That release bundle can be deployed in any other __similar__ instance and run it without needing to setup anything.  
+That release bundle can be deployed in any other _similar_ instance and run it without needing to setup anything.  
 Just uncompress and run `http_proxy/bin/http_proxy start` or `daemon`.
 
 ## Enjoy your spreadsheet!

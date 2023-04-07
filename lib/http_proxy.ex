@@ -61,7 +61,7 @@ defmodule HttpProxy do
   end
 
   @doc """
-  Stopt http_proxy.
+  Stop http_proxy.
   """
   @spec stop :: :ok | {:error, term}
   def stop do

@@ -24,4 +24,4 @@ daemon:
 	${MAKE} logs
 
 logs:
-	tail -f _build/prod/rel/http_proxy/tmp/log/*
+	tail -F _build/prod/rel/http_proxy/tmp/log/*
